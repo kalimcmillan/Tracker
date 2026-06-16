@@ -30,6 +30,9 @@
             padding-bottom: 20px;
             margin-bottom: 30px;
             font-family: 'Playfair Display', serif;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
         }
 
         h1 {
@@ -43,6 +46,30 @@
         .date-time {
             color: #888;
             font-size: 12px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-header {
+            background: #333;
+            border: 1px solid #555;
+            color: #e0e0e0;
+            padding: 8px 12px;
+            font-family: 'Courier Prime', monospace;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 2px;
+        }
+
+        .btn-header:hover {
+            background: #444;
+            border-color: #d4a574;
         }
 
         .tabs {
@@ -157,6 +184,15 @@
             background: #444;
         }
 
+        button.danger {
+            background: #c74444;
+            color: #e0e0e0;
+        }
+
+        button.danger:hover {
+            background: #e85555;
+        }
+
         .transaction-item, .log-item, .improvement-item {
             background: #0a0a0a;
             border: 1px solid #333;
@@ -266,6 +302,113 @@
             gap: 20px;
         }
 
+        .search-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .search-bar input {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .search-bar button {
+            padding: 10px 15px;
+            flex-shrink: 0;
+        }
+
+        /* Notifications */
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #d4a574;
+            color: #0a0a0a;
+            padding: 15px 20px;
+            border-radius: 2px;
+            font-weight: bold;
+            animation: slideIn 0.3s ease-out;
+            z-index: 1000;
+            max-width: 300px;
+        }
+
+        .notification.success {
+            background: #4c8c3c;
+            color: #e0e0e0;
+        }
+
+        .notification.error {
+            background: #c74444;
+            color: #e0e0e0;
+        }
+
+        .notification.info {
+            background: #444;
+            color: #e0e0e0;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: #151515;
+            border: 2px solid #d4a574;
+            padding: 30px;
+            border-radius: 4px;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .modal-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 18px;
+            color: #d4a574;
+            margin-bottom: 15px;
+        }
+
+        .modal-text {
+            color: #aaa;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .modal-actions button {
+            flex: 1;
+        }
+
         @media (max-width: 768px) {
             .grid-2 {
                 grid-template-columns: 1fr;
@@ -273,14 +416,34 @@
             .tabs {
                 flex-wrap: wrap;
             }
+            header {
+                flex-direction: column;
+                gap: 15px;
+            }
+            .header-actions {
+                width: 100%;
+                flex-wrap: wrap;
+            }
+            .notification {
+                left: 20px;
+                right: 20px;
+                max-width: none;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>ARTSCAPY OPERATIONS</h1>
-            <div class="date-time" id="dateTime"></div>
+            <div>
+                <h1>ARTSCAPY OPERATIONS</h1>
+                <div class="date-time" id="dateTime"></div>
+            </div>
+            <div class="header-actions">
+                <button class="btn-header" onclick="exportData()">Export Data</button>
+                <button class="btn-header" onclick="document.getElementById('importFile').click()">Import Data</button>
+                <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+            </div>
         </header>
 
         <div class="tabs">
@@ -369,6 +532,10 @@
 
             <div class="section">
                 <h2>Active Transactions</h2>
+                <div class="search-bar">
+                    <input type="text" id="txnSearchInput" placeholder="Search by title or client...">
+                    <button class="secondary" onclick="resetTransactionSearch()">Reset</button>
+                </div>
                 <div id="transactionsList"></div>
             </div>
         </div>
@@ -482,8 +649,22 @@
         </div>
     </div>
 
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">Confirm Delete</div>
+            <div class="modal-text" id="confirmText"></div>
+            <div class="modal-actions">
+                <button class="secondary" onclick="closeConfirmModal()">Cancel</button>
+                <button class="danger" onclick="executeDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const STORAGE_KEY = 'artscapy_tracker';
+        let pendingDeleteAction = null;
+        let transactionSearchFilter = '';
 
         let data = {
             dailyLogs: [],
@@ -493,17 +674,101 @@
             maxCapacity: 20
         };
 
+        // NOTIFICATION SYSTEM
+        function showNotification(message, type = 'info', duration = 3000) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, duration);
+        }
+
+        // CONFIRMATION MODAL
+        function showConfirm(message, callback) {
+            document.getElementById('confirmText').textContent = message;
+            document.getElementById('confirmModal').classList.add('active');
+            pendingDeleteAction = callback;
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').classList.remove('active');
+            pendingDeleteAction = null;
+        }
+
+        function executeDelete() {
+            if (pendingDeleteAction) {
+                pendingDeleteAction();
+            }
+            closeConfirmModal();
+        }
+
+        // EXPORT/IMPORT FUNCTIONS
+        function exportData() {
+            try {
+                const dataStr = JSON.stringify(data, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(dataBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `artscapy-backup-${new Date().toISOString().split('T')[0]}.json`;
+                link.click();
+                URL.revokeObjectURL(url);
+                showNotification('Data exported successfully', 'success');
+            } catch (e) {
+                showNotification('Error exporting data', 'error');
+            }
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (imported.dailyLogs !== undefined && imported.transactions !== undefined) {
+                        data = imported;
+                        saveData();
+                        refreshAllData();
+                        showNotification('Data imported successfully', 'success');
+                    } else {
+                        showNotification('Invalid backup file format', 'error');
+                    }
+                } catch (error) {
+                    showNotification('Error importing data: ' + error.message, 'error');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
         // Load data from localStorage
         function loadData() {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (stored) {
-                data = JSON.parse(stored);
+            try {
+                const stored = localStorage.getItem(STORAGE_KEY);
+                if (stored) {
+                    data = JSON.parse(stored);
+                }
+            } catch (e) {
+                showNotification('Error loading data from storage', 'error');
             }
         }
 
         // Save data to localStorage
         function saveData() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            } catch (e) {
+                if (e.name === 'QuotaExceededError') {
+                    showNotification('Storage limit exceeded. Please export and clear old data.', 'error');
+                } else {
+                    showNotification('Error saving data', 'error');
+                }
+            }
         }
 
         // Update date/time
@@ -538,7 +803,7 @@
             const ideas = document.getElementById('dailyIdeas').value;
 
             if (!note.trim()) {
-                alert('Please add a note');
+                showNotification('Please add a note', 'error');
                 return;
             }
 
@@ -555,6 +820,7 @@
             document.getElementById('dailyConcurrent').value = '';
             document.getElementById('dailyIdeas').value = '';
             refreshDailyLogs();
+            showNotification('Daily log saved', 'success');
         }
 
         function refreshDailyLogs() {
@@ -575,16 +841,21 @@
                                 ${log.concurrent} concurrent • ${log.ideas} ideas
                             </div>
                         </div>
-                        <button class="btn-small secondary" onclick="deleteDailyLog(${log.id})">Delete</button>
+                        <button class="btn-small secondary" onclick="confirmDeleteDailyLog(${log.id})">Delete</button>
                     </div>
                 `;
             }).join('');
+        }
+
+        function confirmDeleteDailyLog(id) {
+            showConfirm('Delete this daily log? This cannot be undone.', () => deleteDailyLog(id));
         }
 
         function deleteDailyLog(id) {
             data.dailyLogs = data.dailyLogs.filter(log => log.id !== id);
             saveData();
             refreshDailyLogs();
+            showNotification('Daily log deleted', 'success');
         }
 
         // TRANSACTION FUNCTIONS
@@ -596,7 +867,7 @@
             const notes = document.getElementById('txnNotes').value;
 
             if (!title.trim() || !client.trim()) {
-                alert('Please enter title and client');
+                showNotification('Please enter title and client', 'error');
                 return;
             }
 
@@ -616,11 +887,20 @@
             document.getElementById('txnClient').value = '';
             document.getElementById('txnNotes').value = '';
             refreshTransactions();
+            showNotification('Transaction added', 'success');
         }
 
         function refreshTransactions() {
             const list = document.getElementById('transactionsList');
-            const active = data.transactions.filter(t => t.status !== 'completed');
+            let active = data.transactions.filter(t => t.status !== 'completed');
+
+            if (transactionSearchFilter) {
+                const filter = transactionSearchFilter.toLowerCase();
+                active = active.filter(t => 
+                    t.title.toLowerCase().includes(filter) || 
+                    t.client.toLowerCase().includes(filter)
+                );
+            }
 
             if (active.length === 0) {
                 list.innerHTML = '<div class="empty-state">No active transactions</div>';
@@ -647,7 +927,7 @@
                                     <option value="delivery" ${txn.status === 'delivery' ? 'selected' : ''}>Delivery</option>
                                     <option value="completed" ${txn.status === 'completed' ? 'selected' : ''}>Completed</option>
                                 </select>
-                                <button class="btn-small secondary" onclick="deleteTransaction(${txn.id})">Delete</button>
+                                <button class="btn-small secondary" onclick="confirmDeleteTransaction(${txn.id})">Delete</button>
                             </div>
                         </div>
                     `;
@@ -664,17 +944,34 @@
                 txn.status = newStatus;
                 if (newStatus === 'completed' && !txn.completedDate) {
                     txn.completedDate = new Date().toISOString();
+                    showNotification('Transaction completed', 'success');
                 }
                 saveData();
                 refreshTransactions();
             }
         }
 
+        function confirmDeleteTransaction(id) {
+            showConfirm('Delete this transaction? This cannot be undone.', () => deleteTransaction(id));
+        }
+
         function deleteTransaction(id) {
             data.transactions = data.transactions.filter(t => t.id !== id);
             saveData();
             refreshTransactions();
+            showNotification('Transaction deleted', 'success');
         }
+
+        function resetTransactionSearch() {
+            transactionSearchFilter = '';
+            document.getElementById('txnSearchInput').value = '';
+            refreshTransactions();
+        }
+
+        document.getElementById('txnSearchInput')?.addEventListener('input', function(e) {
+            transactionSearchFilter = e.target.value;
+            refreshTransactions();
+        });
 
         function updateConcurrentCount() {
             const concurrent = data.transactions.filter(t => t.status !== 'completed').length;
@@ -728,6 +1025,7 @@
                 data.maxCapacity = newMax;
                 saveData();
                 refreshCapacity();
+                showNotification('Capacity setting updated', 'success');
             }
         }
 
@@ -738,7 +1036,7 @@
             const status = document.getElementById('targetStatus').value;
 
             if (!title.trim()) {
-                alert('Please enter a target');
+                showNotification('Please enter a target', 'error');
                 return;
             }
 
@@ -754,6 +1052,7 @@
             document.getElementById('targetTitle').value = '';
             document.getElementById('targetDate').value = '';
             refreshTargets();
+            showNotification('Target added', 'success');
         }
 
         function refreshTargets() {
@@ -777,7 +1076,7 @@
                                 <option value="in_progress" ${target.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
                                 <option value="completed" ${target.status === 'completed' ? 'selected' : ''}>Completed</option>
                             </select>
-                            <button class="btn-small secondary" onclick="deleteTarget(${target.id})">Delete</button>
+                            <button class="btn-small secondary" onclick="confirmDeleteTarget(${target.id})">Delete</button>
                         </div>
                     </div>
                 `;
@@ -793,10 +1092,15 @@
             }
         }
 
+        function confirmDeleteTarget(id) {
+            showConfirm('Delete this target? This cannot be undone.', () => deleteTarget(id));
+        }
+
         function deleteTarget(id) {
             data.probationTargets = data.probationTargets.filter(t => t.id !== id);
             saveData();
             refreshTargets();
+            showNotification('Target deleted', 'success');
         }
 
         // IMPROVEMENTS FUNCTIONS
@@ -806,7 +1110,7 @@
             const impact = document.getElementById('improvementImpact').value;
 
             if (!title.trim()) {
-                alert('Please enter an improvement');
+                showNotification('Please enter an improvement', 'error');
                 return;
             }
 
@@ -823,6 +1127,7 @@
             document.getElementById('improvementTitle').value = '';
             document.getElementById('improvementImpact').value = '';
             refreshImprovements();
+            showNotification('Improvement logged', 'success');
         }
 
         function refreshImprovements() {
@@ -846,7 +1151,7 @@
                                 <option value="proposed" ${imp.status === 'proposed' ? 'selected' : ''}>Proposed</option>
                                 <option value="implemented" ${imp.status === 'implemented' ? 'selected' : ''}>Implemented</option>
                             </select>
-                            <button class="btn-small secondary" onclick="deleteImprovement(${imp.id})">Delete</button>
+                            <button class="btn-small secondary" onclick="confirmDeleteImprovement(${imp.id})">Delete</button>
                         </div>
                     </div>
                 `;
@@ -862,10 +1167,15 @@
             }
         }
 
+        function confirmDeleteImprovement(id) {
+            showConfirm('Delete this improvement? This cannot be undone.', () => deleteImprovement(id));
+        }
+
         function deleteImprovement(id) {
             data.improvements = data.improvements.filter(i => i.id !== id);
             saveData();
             refreshImprovements();
+            showNotification('Improvement deleted', 'success');
         }
 
         // Refresh all data
