@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Artscapy Operations Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0a0a;
+            color: #e0e0e0;
+            font-family: 'Courier Prime', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            border-bottom: 2px solid #d4a574;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+            font-family: 'Playfair Display', serif;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: normal;
+            letter-spacing: 2px;
+            color: #d4a574;
+            margin-bottom: 5px;
+        }
+
+        .date-time {
+            color: #888;
+            font-size: 12px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1px;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #333;
+        }
+
+        .tab-button {
+            background: #1a1a1a;
+            border: none;
+            border-bottom: 2px solid #333;
+            color: #888;
+            padding: 12px 20px;
+            cursor: pointer;
+            font-family: 'Courier Prime', monospace;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+        }
+
+        .tab-button.active {
+            border-bottom-color: #d4a574;
+            color: #d4a574;
+            background: #151515;
+        }
+
+        .tab-button:hover {
+            color: #d4a574;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .section {
+            background: #151515;
+            border: 1px solid #333;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 18px;
+            color: #d4a574;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #333;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            color: #888;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            color: #e0e0e0;
+            padding: 10px;
+            font-family: 'Courier Prime', monospace;
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #d4a574;
+            background: #1a1a1a;
+        }
+
+        button {
+            background: #d4a574;
+            border: none;
+            color: #0a0a0a;
+            padding: 10px 20px;
+            font-family: 'Courier Prime', monospace;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #e8c294;
+        }
+
+        button.secondary {
+            background: #333;
+            color: #e0e0e0;
+        }
+
+        button.secondary:hover {
+            background: #444;
+        }
+
+        .transaction-item, .log-item, .improvement-item {
+            background: #0a0a0a;
+            border: 1px solid #333;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .transaction-item.completed, .log-item.completed {
+            border-left: 3px solid #d4a574;
+        }
+
+        .item-content {
+            flex: 1;
+        }
+
+        .item-title {
+            color: #d4a574;
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+
+        .item-meta {
+            color: #666;
+            font-size: 12px;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 11px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: #0a0a0a;
+            border: 1px solid #333;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            color: #d4a574;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #888;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .progress-bar {
+            background: #333;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            background: #d4a574;
+            height: 100%;
+            transition: width 0.2s;
+        }
+
+        .ticker {
+            background: #1a1a1a;
+            border: 2px solid #d4a574;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        .ticker-number {
+            font-size: 36px;
+            color: #d4a574;
+            font-weight: bold;
+        }
+
+        .empty-state {
+            color: #666;
+            padding: 20px;
+            text-align: center;
+            font-style: italic;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+            .tabs {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>ARTSCAPY OPERATIONS</h1>
+            <div class="date-time" id="dateTime"></div>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-button active" data-tab="daily">Daily Log</button>
+            <button class="tab-button" data-tab="transactions">Transactions</button>
+            <button class="tab-button" data-tab="capacity">Capacity</button>
+            <button class="tab-button" data-tab="probation">Probation</button>
+            <button class="tab-button" data-tab="improvements">Improvements</button>
+        </div>
+
+        <!-- DAILY LOG TAB -->
+        <div id="daily" class="tab-content active">
+            <div class="section">
+                <h2>Daily Check-In</h2>
+                <div class="form-group">
+                    <label>What happened today?</label>
+                    <textarea id="dailyNote" rows="4" placeholder="Workflows, blockers, wins, observations..."></textarea>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Concurrent transactions today</label>
+                        <input type="number" id="dailyConcurrent" placeholder="0" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Process improvements spotted</label>
+                        <input type="number" id="dailyIdeas" placeholder="0" min="0">
+                    </div>
+                </div>
+                <button onclick="saveDailyLog()">Log Today</button>
+            </div>
+
+            <div class="section">
+                <h2>Recent Logs</h2>
+                <div id="dailyLogsList"></div>
+            </div>
+        </div>
+
+        <!-- TRANSACTIONS TAB -->
+        <div id="transactions" class="tab-content">
+            <div class="ticker">
+                <div class="stat-label">Concurrent Transactions</div>
+                <div class="ticker-number" id="concurrentCount">0</div>
+            </div>
+
+            <div class="section">
+                <h2>Add Transaction</h2>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Artwork Title</label>
+                        <input type="text" id="txnTitle" placeholder="Piece name or ID">
+                    </div>
+                    <div class="form-group">
+                        <label>Client/Contact</label>
+                        <input type="text" id="txnClient" placeholder="Name">
+                    </div>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Trade Type</label>
+                        <select id="txnType">
+                            <option value="auction">Auction</option>
+                            <option value="private_sale">Private Sale</option>
+                            <option value="direct_consignment">Direct Consignment</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="txnStatus">
+                            <option value="intake">Intake</option>
+                            <option value="documentation">Documentation</option>
+                            <option value="packing">Packing</option>
+                            <option value="shipping">Shipping</option>
+                            <option value="in_transit">In Transit</option>
+                            <option value="delivery">Delivery</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="txnNotes" rows="3" placeholder="Logistics, any special handling, etc."></textarea>
+                </div>
+                <button onclick="addTransaction()">Add Transaction</button>
+            </div>
+
+            <div class="section">
+                <h2>Active Transactions</h2>
+                <div id="transactionsList"></div>
+            </div>
+        </div>
+
+        <!-- CAPACITY TAB -->
+        <div id="capacity" class="tab-content">
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-label">Concurrent Now</div>
+                    <div class="stat-number" id="capConcurrent">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Completed (Total)</div>
+                    <div class="stat-number" id="capCompleted">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Avg Time (Days)</div>
+                    <div class="stat-number" id="capAvgTime">—</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Capacity Used</div>
+                    <div class="stat-number" id="capPercent">0%</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Capacity Analysis</h2>
+                <p style="margin-bottom: 15px; color: #888;">Assuming max sustainable capacity: 20 concurrent transactions</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="capacityBar" style="width: 0%"></div>
+                </div>
+                <div style="margin-top: 15px; padding: 15px; background: #0a0a0a; border: 1px solid #333;">
+                    <p id="capacityStatus" style="color: #666; font-size: 12px;">No transactions yet.</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Capacity Settings</h2>
+                <div class="form-group">
+                    <label>Max Sustainable Concurrent (for capacity %)</label>
+                    <input type="number" id="maxCapacity" value="20" min="1">
+                    <button class="secondary" onclick="updateCapacitySetting()" style="width: 100%; margin-top: 10px;">Update</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PROBATION TAB -->
+        <div id="probation" class="tab-content">
+            <div class="section">
+                <h2>Probation Period: 6 Months (Sep 1 - Feb 28)</h2>
+                <p style="color: #888; font-size: 12px; margin-bottom: 15px;">Targets TBD with Vanessa by end of Week 1</p>
+            </div>
+
+            <div class="section">
+                <h2>Targets</h2>
+                <div class="form-group">
+                    <label>Add Target</label>
+                    <input type="text" id="targetTitle" placeholder="e.g., Implement post-sale workflow system">
+                </div>
+                <div class="form-group">
+                    <label>Target Date</label>
+                    <input type="date" id="targetDate">
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="targetStatus">
+                        <option value="pending">Pending</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                </div>
+                <button onclick="addTarget()">Add Target</button>
+            </div>
+
+            <div class="section">
+                <h2>Progress</h2>
+                <div id="targetsList"></div>
+            </div>
+        </div>
+
+        <!-- IMPROVEMENTS TAB -->
+        <div id="improvements" class="tab-content">
+            <div class="section">
+                <h2>Process Improvements</h2>
+                <div class="form-group">
+                    <label>Improvement Idea</label>
+                    <input type="text" id="improvementTitle" placeholder="What could be better?">
+                </div>
+                <div class="form-group">
+                    <label>Area</label>
+                    <select id="improvementArea">
+                        <option value="transaction_workflow">Transaction Workflow</option>
+                        <option value="logistics">Logistics</option>
+                        <option value="client_communication">Client Communication</option>
+                        <option value="documentation">Documentation</option>
+                        <option value="reporting">Reporting</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Impact (if implemented)</label>
+                    <textarea id="improvementImpact" rows="3" placeholder="How would this help? Who benefits?"></textarea>
+                </div>
+                <button onclick="addImprovement()">Log Improvement</button>
+            </div>
+
+            <div class="section">
+                <h2>Ideas Log</h2>
+                <div id="improvementsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'artscapy_tracker';
+
+        let data = {
+            dailyLogs: [],
+            transactions: [],
+            probationTargets: [],
+            improvements: [],
+            maxCapacity: 20
+        };
+
+        // Load data from localStorage
+        function loadData() {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                data = JSON.parse(stored);
+            }
+        }
+
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        }
+
+        // Update date/time
+        function updateDateTime() {
+            const now = new Date();
+            document.getElementById('dateTime').textContent = now.toLocaleString('en-GB', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Tab switching
+        document.querySelectorAll('.tab-button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const tabName = this.getAttribute('data-tab');
+                document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+                document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
+                document.getElementById(tabName).classList.add('active');
+                this.classList.add('active');
+                refreshAllData();
+            });
+        });
+
+        // DAILY LOG FUNCTIONS
+        function saveDailyLog() {
+            const note = document.getElementById('dailyNote').value;
+            const concurrent = document.getElementById('dailyConcurrent').value;
+            const ideas = document.getElementById('dailyIdeas').value;
+
+            if (!note.trim()) {
+                alert('Please add a note');
+                return;
+            }
+
+            data.dailyLogs.push({
+                id: Date.now(),
+                date: new Date().toISOString(),
+                note,
+                concurrent: parseInt(concurrent) || 0,
+                ideas: parseInt(ideas) || 0
+            });
+
+            saveData();
+            document.getElementById('dailyNote').value = '';
+            document.getElementById('dailyConcurrent').value = '';
+            document.getElementById('dailyIdeas').value = '';
+            refreshDailyLogs();
+        }
+
+        function refreshDailyLogs() {
+            const list = document.getElementById('dailyLogsList');
+            if (data.dailyLogs.length === 0) {
+                list.innerHTML = '<div class="empty-state">No logs yet</div>';
+                return;
+            }
+
+            list.innerHTML = data.dailyLogs.slice().reverse().slice(0, 10).map(log => {
+                const date = new Date(log.date).toLocaleDateString('en-GB');
+                return `
+                    <div class="log-item">
+                        <div class="item-content">
+                            <div class="item-title">${date}</div>
+                            <div style="margin-top: 8px; color: #aaa;">${log.note}</div>
+                            <div class="item-meta" style="margin-top: 8px;">
+                                ${log.concurrent} concurrent • ${log.ideas} ideas
+                            </div>
+                        </div>
+                        <button class="btn-small secondary" onclick="deleteDailyLog(${log.id})">Delete</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function deleteDailyLog(id) {
+            data.dailyLogs = data.dailyLogs.filter(log => log.id !== id);
+            saveData();
+            refreshDailyLogs();
+        }
+
+        // TRANSACTION FUNCTIONS
+        function addTransaction() {
+            const title = document.getElementById('txnTitle').value;
+            const client = document.getElementById('txnClient').value;
+            const type = document.getElementById('txnType').value;
+            const status = document.getElementById('txnStatus').value;
+            const notes = document.getElementById('txnNotes').value;
+
+            if (!title.trim() || !client.trim()) {
+                alert('Please enter title and client');
+                return;
+            }
+
+            data.transactions.push({
+                id: Date.now(),
+                title,
+                client,
+                type,
+                status,
+                notes,
+                createdDate: new Date().toISOString(),
+                completedDate: null
+            });
+
+            saveData();
+            document.getElementById('txnTitle').value = '';
+            document.getElementById('txnClient').value = '';
+            document.getElementById('txnNotes').value = '';
+            refreshTransactions();
+        }
+
+        function refreshTransactions() {
+            const list = document.getElementById('transactionsList');
+            const active = data.transactions.filter(t => t.status !== 'completed');
+
+            if (active.length === 0) {
+                list.innerHTML = '<div class="empty-state">No active transactions</div>';
+            } else {
+                list.innerHTML = active.map(txn => {
+                    const createdDate = new Date(txn.createdDate).toLocaleDateString('en-GB');
+                    return `
+                        <div class="transaction-item">
+                            <div class="item-content">
+                                <div class="item-title">${txn.title}</div>
+                                <div class="item-meta">
+                                    ${txn.client} • ${txn.type} • ${txn.status}
+                                </div>
+                                ${txn.notes ? `<div style="margin-top: 8px; color: #888; font-size: 12px;">${txn.notes}</div>` : ''}
+                                <div class="item-meta" style="margin-top: 8px;">Started: ${createdDate}</div>
+                            </div>
+                            <div class="item-actions">
+                                <select class="btn-small" onchange="updateTransactionStatus(${txn.id}, this.value)" style="width: 140px;">
+                                    <option value="intake" ${txn.status === 'intake' ? 'selected' : ''}>Intake</option>
+                                    <option value="documentation" ${txn.status === 'documentation' ? 'selected' : ''}>Documentation</option>
+                                    <option value="packing" ${txn.status === 'packing' ? 'selected' : ''}>Packing</option>
+                                    <option value="shipping" ${txn.status === 'shipping' ? 'selected' : ''}>Shipping</option>
+                                    <option value="in_transit" ${txn.status === 'in_transit' ? 'selected' : ''}>In Transit</option>
+                                    <option value="delivery" ${txn.status === 'delivery' ? 'selected' : ''}>Delivery</option>
+                                    <option value="completed" ${txn.status === 'completed' ? 'selected' : ''}>Completed</option>
+                                </select>
+                                <button class="btn-small secondary" onclick="deleteTransaction(${txn.id})">Delete</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            updateConcurrentCount();
+            refreshCapacity();
+        }
+
+        function updateTransactionStatus(id, newStatus) {
+            const txn = data.transactions.find(t => t.id === id);
+            if (txn) {
+                txn.status = newStatus;
+                if (newStatus === 'completed' && !txn.completedDate) {
+                    txn.completedDate = new Date().toISOString();
+                }
+                saveData();
+                refreshTransactions();
+            }
+        }
+
+        function deleteTransaction(id) {
+            data.transactions = data.transactions.filter(t => t.id !== id);
+            saveData();
+            refreshTransactions();
+        }
+
+        function updateConcurrentCount() {
+            const concurrent = data.transactions.filter(t => t.status !== 'completed').length;
+            document.getElementById('concurrentCount').textContent = concurrent;
+        }
+
+        // CAPACITY FUNCTIONS
+        function refreshCapacity() {
+            const concurrent = data.transactions.filter(t => t.status !== 'completed').length;
+            const completed = data.transactions.filter(t => t.status === 'completed').length;
+            const capacityPercent = Math.round((concurrent / data.maxCapacity) * 100);
+
+            document.getElementById('capConcurrent').textContent = concurrent;
+            document.getElementById('capCompleted').textContent = completed;
+            document.getElementById('capPercent').textContent = capacityPercent + '%';
+
+            // Calculate average time for completed transactions
+            if (completed > 0) {
+                const completedTxns = data.transactions.filter(t => t.status === 'completed' && t.completedDate);
+                const avgMs = completedTxns.reduce((sum, t) => {
+                    const created = new Date(t.createdDate);
+                    const completed = new Date(t.completedDate);
+                    return sum + (completed - created);
+                }, 0) / completedTxns.length;
+                const avgDays = Math.round(avgMs / (1000 * 60 * 60 * 24));
+                document.getElementById('capAvgTime').textContent = avgDays;
+            }
+
+            // Update progress bar
+            document.getElementById('capacityBar').style.width = Math.min(capacityPercent, 100) + '%';
+
+            // Update status message
+            let statusMsg = '';
+            if (concurrent === 0) {
+                statusMsg = 'No active transactions. Ready for new intake.';
+            } else if (capacityPercent <= 50) {
+                statusMsg = `Operating at ${capacityPercent}% capacity. Comfortable range.`;
+            } else if (capacityPercent <= 80) {
+                statusMsg = `Operating at ${capacityPercent}% capacity. Approaching limits.`;
+            } else if (capacityPercent <= 100) {
+                statusMsg = `Operating at ${capacityPercent}% capacity. At or near max. Note timeline for team expansion discussion.`;
+            } else {
+                statusMsg = `Operating at ${capacityPercent}% capacity. OVER CAPACITY. Additional support needed now.`;
+            }
+            document.getElementById('capacityStatus').textContent = statusMsg;
+        }
+
+        function updateCapacitySetting() {
+            const newMax = parseInt(document.getElementById('maxCapacity').value);
+            if (newMax > 0) {
+                data.maxCapacity = newMax;
+                saveData();
+                refreshCapacity();
+            }
+        }
+
+        // PROBATION FUNCTIONS
+        function addTarget() {
+            const title = document.getElementById('targetTitle').value;
+            const date = document.getElementById('targetDate').value;
+            const status = document.getElementById('targetStatus').value;
+
+            if (!title.trim()) {
+                alert('Please enter a target');
+                return;
+            }
+
+            data.probationTargets.push({
+                id: Date.now(),
+                title,
+                dueDate: date || null,
+                status,
+                createdDate: new Date().toISOString()
+            });
+
+            saveData();
+            document.getElementById('targetTitle').value = '';
+            document.getElementById('targetDate').value = '';
+            refreshTargets();
+        }
+
+        function refreshTargets() {
+            const list = document.getElementById('targetsList');
+            if (data.probationTargets.length === 0) {
+                list.innerHTML = '<div class="empty-state">No targets yet. Add targets once confirmed with Vanessa.</div>';
+                return;
+            }
+
+            list.innerHTML = data.probationTargets.map(target => {
+                const dueDate = target.dueDate ? new Date(target.dueDate).toLocaleDateString('en-GB') : '—';
+                return `
+                    <div class="transaction-item ${target.status === 'completed' ? 'completed' : ''}">
+                        <div class="item-content">
+                            <div class="item-title">${target.title}</div>
+                            <div class="item-meta">Due: ${dueDate} • Status: ${target.status}</div>
+                        </div>
+                        <div class="item-actions">
+                            <select class="btn-small" onchange="updateTargetStatus(${target.id}, this.value)" style="width: 130px;">
+                                <option value="pending" ${target.status === 'pending' ? 'selected' : ''}>Pending</option>
+                                <option value="in_progress" ${target.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
+                                <option value="completed" ${target.status === 'completed' ? 'selected' : ''}>Completed</option>
+                            </select>
+                            <button class="btn-small secondary" onclick="deleteTarget(${target.id})">Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateTargetStatus(id, newStatus) {
+            const target = data.probationTargets.find(t => t.id === id);
+            if (target) {
+                target.status = newStatus;
+                saveData();
+                refreshTargets();
+            }
+        }
+
+        function deleteTarget(id) {
+            data.probationTargets = data.probationTargets.filter(t => t.id !== id);
+            saveData();
+            refreshTargets();
+        }
+
+        // IMPROVEMENTS FUNCTIONS
+        function addImprovement() {
+            const title = document.getElementById('improvementTitle').value;
+            const area = document.getElementById('improvementArea').value;
+            const impact = document.getElementById('improvementImpact').value;
+
+            if (!title.trim()) {
+                alert('Please enter an improvement');
+                return;
+            }
+
+            data.improvements.push({
+                id: Date.now(),
+                title,
+                area,
+                impact,
+                status: 'idea',
+                createdDate: new Date().toISOString()
+            });
+
+            saveData();
+            document.getElementById('improvementTitle').value = '';
+            document.getElementById('improvementImpact').value = '';
+            refreshImprovements();
+        }
+
+        function refreshImprovements() {
+            const list = document.getElementById('improvementsList');
+            if (data.improvements.length === 0) {
+                list.innerHTML = '<div class="empty-state">No improvements logged yet</div>';
+                return;
+            }
+
+            list.innerHTML = data.improvements.slice().reverse().map(imp => {
+                return `
+                    <div class="improvement-item">
+                        <div class="item-content">
+                            <div class="item-title">${imp.title}</div>
+                            <div class="item-meta">${imp.area}</div>
+                            ${imp.impact ? `<div style="margin-top: 8px; color: #888; font-size: 12px;">Impact: ${imp.impact}</div>` : ''}
+                        </div>
+                        <div class="item-actions">
+                            <select class="btn-small" onchange="updateImprovementStatus(${imp.id}, this.value)" style="width: 120px;">
+                                <option value="idea" ${imp.status === 'idea' ? 'selected' : ''}>Idea</option>
+                                <option value="proposed" ${imp.status === 'proposed' ? 'selected' : ''}>Proposed</option>
+                                <option value="implemented" ${imp.status === 'implemented' ? 'selected' : ''}>Implemented</option>
+                            </select>
+                            <button class="btn-small secondary" onclick="deleteImprovement(${imp.id})">Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateImprovementStatus(id, newStatus) {
+            const imp = data.improvements.find(i => i.id === id);
+            if (imp) {
+                imp.status = newStatus;
+                saveData();
+                refreshImprovements();
+            }
+        }
+
+        function deleteImprovement(id) {
+            data.improvements = data.improvements.filter(i => i.id !== id);
+            saveData();
+            refreshImprovements();
+        }
+
+        // Refresh all data
+        function refreshAllData() {
+            refreshDailyLogs();
+            refreshTransactions();
+            refreshTargets();
+            refreshImprovements();
+            refreshCapacity();
+        }
+
+        // Initialize
+        loadData();
+        updateDateTime();
+        refreshAllData();
+        setInterval(updateDateTime, 60000);
+    </script>
+</body>
+</html>
